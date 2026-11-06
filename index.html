@@ -73,6 +73,7 @@ body{margin:0;background:var(--page-bg);color:var(--text);font-family:'Inter',sa
 .list-row .actions{white-space:nowrap;}
 .list-row .actions button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;margin-left:10px;}
 .list-row .actions button:hover{color:var(--burgundy-dim);}
+.list-row .actions button.dais-remove:hover{color:var(--flag);}
 .list-row .meta{color:var(--muted);font-size:12px;display:block;}
 
 .edit-row{padding:10px 20px;border-bottom:1px solid var(--line);background:var(--paper-dim);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
@@ -357,6 +358,12 @@ db.ref(SESSIONS_KEY).on('value', snapshot => {
 
 db.ref(ACCOUNTS_KEY).on('value', snapshot => {
   accounts = snapshot.exists() ? snapshot.val() : [];
+  if (currentUser && currentUser.role === 'dais' && !accounts.find(a => a.name === currentUser.name)) {
+    document.getElementById('logoutBtn').click();
+    document.getElementById('loginError').textContent = 'Your dais account was removed by the secretariat.';
+  } else if (currentUser && currentUser.role === 'secretariat') {
+    renderDaisAccess();
+  }
 });
 
 db.ref(SCORES_KEY).on('value', snapshot => {
@@ -902,11 +909,30 @@ function renderDaisAccess(){
       <span>${escapeHtml(a.name)}<span class="meta">${committee ? escapeHtml(committee.name) : 'No committee'} · ${count} flagged ${count===1?'entry':'entries'} · ${statusText}</span></span>
       <span class="actions">
         <button class="dais-toggle" data-name="${escapeHtml(a.name)}">${a.suspended ? 'Reinstate access' : 'Suspend access'}</button>
+        <button class="dais-remove" data-name="${escapeHtml(a.name)}">Remove</button>
       </span>
     </div>`;
   }).join('');
 }
 document.getElementById('daisAccessList').addEventListener('click', async (e)=>{
+  if(e.target.classList.contains('dais-remove')){
+    const rname = e.target.dataset.name;
+    if(!accounts.find(a=>a.name===rname && a.role==='dais')) return;
+    if(!confirm(`Remove ${rname} from the grading system?\n\nTheir account will be deleted and they will be signed out. They can register again later; to block someone, use Suspend access instead.`)) return;
+    const theirScores = scores.filter(s=>s.daisName===rname);
+    let alsoScores = false;
+    if(theirScores.length){
+      alsoScores = confirm(`${rname} has submitted ${theirScores.length} score ${theirScores.length===1?'entry':'entries'}.\n\nOK = delete these scores too.\nCancel = keep them in the rankings.`);
+    }
+    accounts = accounts.filter(a=>!(a.name===rname && a.role==='dais'));
+    await saveShared(ACCOUNTS_KEY, accounts);
+    if(alsoScores){
+      scores = scores.filter(s=>s.daisName!==rname);
+      await saveShared(SCORES_KEY, scores);
+    }
+    renderDaisAccess(); renderRank(); renderReports();
+    return;
+  }
   if(!e.target.classList.contains('dais-toggle')) return;
   const name = e.target.dataset.name;
   const acct = accounts.find(a=>a.name===name);
