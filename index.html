@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Committee Dossier — Delegate Scoring</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+:root{
+  --page-bg:#35302A;
+  --ink:#2B251E;
+  --paper:#F1E7D6;
+  --paper-dim:#ECEAE2;
+  --line:rgba(43,37,30,0.16);
+  --burgundy:#B0885A;
+  --burgundy-dim:#8F6D44;
+  --gold:#C6A377;
+  --text:#2B251E;
+  --muted:#5B5347;
+  --good:#3F5845;
+  --flag:#A5432B;
+  --closed:#8A5A2A;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--page-bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding:32px 16px 64px;}
+.wrap{max-width:980px;margin:0 auto;}
+
+.login-wrap{max-width:440px;margin:60px auto;}
+.login-card{background:var(--paper);border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,0.35);padding:32px 28px;}
+.login-logo{display:block;width:56px;height:56px;border-radius:50%;object-fit:cover;margin:0 auto 14px;}
+.login-card h1{font-family:'Fraunces',serif;font-weight:600;font-size:24px;margin:0 0 4px;text-align:center;letter-spacing:0.02em;}
+.login-card p.sub{color:var(--muted);font-size:13px;margin:0 0 22px;text-align:center;}
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;}
+.field input[type=text],.field input[type=password],.field select{
+  width:100%;padding:10px 12px;border:1px solid var(--line);background:var(--paper);border-radius:2px;font-size:14px;font-family:'Inter',sans-serif;color:var(--text);
+}
+.field input:focus,.field select:focus{outline:none;border-color:var(--burgundy-dim);}
+.role-choice{display:flex;gap:10px;margin-bottom:14px;}
+.role-opt{flex:1;border:1px solid var(--line);padding:10px;text-align:center;cursor:pointer;font-size:13px;border-radius:2px;color:var(--muted);}
+.role-opt.selected{border-color:var(--burgundy);color:var(--ink);background:#E5DED2;}
+.login-btn{width:100%;background:var(--ink);color:var(--paper);border:none;padding:12px;font-size:14px;cursor:pointer;border-radius:2px;font-family:'Inter',sans-serif;}
+.login-btn:hover{background:#231F19;}
+.login-error{color:var(--flag);font-size:13px;margin-top:10px;min-height:16px;}
+.login-hint{color:var(--muted);font-size:12px;margin-top:16px;line-height:1.5;}
+
+#app{display:none;}
+.masthead{color:var(--paper);padding:8px 4px 20px;border-bottom:1px solid rgba(241,231,214,0.2);margin-bottom:24px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;}
+.masthead-logo{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none;}
+.masthead h1{font-family:'Fraunces',serif;font-weight:600;font-size:30px;margin:0 0 6px;letter-spacing:0.01em;}
+.masthead .who{font-size:13px;color:rgba(241,231,214,0.7);}
+.masthead .who b{color:var(--gold);font-weight:600;}
+.logout-link{color:rgba(241,231,214,0.6);font-size:12px;text-decoration:underline;cursor:pointer;margin-left:10px;}
+
+.tabs{display:flex;gap:2px;margin-bottom:20px;flex-wrap:wrap;}
+.tab{flex:1;min-width:110px;text-align:center;padding:12px 8px;background:rgba(241,231,214,0.08);color:rgba(241,231,214,0.65);cursor:pointer;font-size:14px;border-bottom:2px solid transparent;}
+.tab.active{color:var(--paper);border-bottom-color:var(--gold);}
+.tab:hover{color:var(--paper);}
+
+.panel{background:var(--paper);border-radius:4px;box-shadow:0 24px 60px rgba(0,0,0,0.35);display:none;}
+.panel.active{display:block;}
+
+.add-row{display:flex;gap:8px;padding:16px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center;}
+.add-row input,.add-row select{font-size:14px;padding:9px 11px;border:1px solid var(--line);background:var(--paper);border-radius:2px;font-family:'Inter',sans-serif;}
+.add-row input[type=text]{flex:1;min-width:160px;}
+.add-row button{background:var(--ink);color:var(--paper);border:none;padding:9px 16px;font-size:13px;cursor:pointer;border-radius:2px;font-family:'Inter',sans-serif;}
+.add-row button:hover{background:#231F19;}
+
+.section-label{padding:16px 20px 0;font-family:'Fraunces',serif;font-weight:600;font-size:16px;}
+.section-sub{padding:2px 20px 0;font-size:12px;color:var(--muted);}
+.empty{padding:50px 24px;text-align:center;color:var(--muted);font-size:14px;}
+
+.list-row{display:flex;justify-content:space-between;align-items:center;padding:8px 20px;border-bottom:1px solid var(--line);font-size:14px;}
+.list-row .actions{white-space:nowrap;}
+.list-row .actions button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;text-decoration:underline;padding:0;margin-left:10px;}
+.list-row .actions button:hover{color:var(--burgundy-dim);}
+.list-row .meta{color:var(--muted);font-size:12px;display:block;}
+
+.edit-row{padding:10px 20px;border-bottom:1px solid var(--line);background:var(--paper-dim);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.edit-row input{padding:8px 10px;border:1px solid var(--line);border-radius:2px;font-size:13px;font-family:'Inter',sans-serif;}
+.edit-row .save-btn{background:var(--ink);color:var(--paper);border:none;padding:8px 14px;border-radius:2px;cursor:pointer;font-size:13px;}
+.edit-row .cancel-btn{background:none;border:1px solid var(--line);padding:8px 14px;border-radius:2px;cursor:pointer;font-size:13px;color:var(--muted);}
+
+.setup-committee-picker{display:flex;align-items:center;gap:10px;padding:14px 20px;background:var(--paper-dim);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+.setup-committee-picker label{font-size:12px;color:var(--muted);}
+.setup-committee-picker select{padding:8px 10px;border:1px solid var(--line);border-radius:2px;font-size:14px;font-family:'Inter',sans-serif;}
+
+.status-banner{margin:18px 20px 0;padding:12px 16px;border-radius:2px;font-size:13px;}
+.status-banner.open{background:#E1E9E2;color:var(--good);}
+.status-banner.closed{background:#F3E6D3;color:var(--closed);}
+
+.delegate{border-bottom:1px solid var(--line);padding:18px 20px;}
+.delegate:last-child{border-bottom:none;}
+.d-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.d-name{font-family:'Fraunces',serif;font-weight:600;font-size:19px;}
+.d-total{font-family:'Fraunces',serif;font-size:15px;color:var(--burgundy-dim);white-space:nowrap;}
+.criteria{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px;}
+.criterion{display:grid;grid-template-columns:170px 1fr 30px;align-items:center;gap:10px;}
+.criterion label{font-size:13px;}
+.criterion input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--line);border-radius:2px;}
+.criterion input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--burgundy-dim);cursor:pointer;margin-top:-1px;}
+.criterion .val{font-size:13px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;}
+.notes{width:100%;border:1px solid var(--line);background:var(--paper-dim);border-radius:2px;padding:8px 10px;font-size:13px;font-family:'Inter',sans-serif;resize:vertical;min-height:32px;}
+.notes:focus{outline:none;border-color:var(--burgundy-dim);}
+
+.filter-row{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap;font-size:13px;color:var(--muted);}
+.filter-row select{padding:8px 10px;border:1px solid var(--line);border-radius:2px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;}
+
+.rank-table,.report-table{width:100%;border-collapse:collapse;}
+.rank-table th,.report-table th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);font-weight:500;padding:14px 16px 8px;border-bottom:1px solid var(--line);}
+.rank-table th.num,.rank-table td.num,.report-table th.num,.report-table td.num{text-align:right;}
+.rank-table td,.report-table td{padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top;}
+.rank-table tr:last-child td,.report-table tr:last-child td{border-bottom:none;}
+.rank-pos{font-family:'Fraunces',serif;font-size:16px;color:var(--burgundy-dim);width:28px;}
+.rank-name{font-family:'Fraunces',serif;font-weight:600;font-size:16px;}
+.award{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;margin-top:2px;}
+.award.best{background:var(--gold);color:#3a2c08;}
+.award.outstanding{background:#E1E9E2;color:var(--good);}
+.award.honorable{background:#E7E1D2;color:#6B5B2A;}
+.award.verbal{background:#EFEAE0;color:var(--muted);}
+.flag-badge{display:inline-block;background:#F3DCD3;color:var(--flag);font-size:11px;padding:2px 7px;border-radius:10px;}
+
+.footer-note{color:rgba(241,231,214,0.55);font-size:12px;text-align:center;margin-top:20px;line-height:1.6;}
+.reset-link{color:rgba(241,231,214,0.7);cursor:pointer;text-decoration:underline;}
+</style>
+</head>
+<body>
+
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>VÉRITAS MUN</h1>
+    <p class="sub">Grading Dossier — sign in to score, review, and rank delegates.</p>
+
+    <div class="field"><label for="loginName">Your name</label><input type="text" id="loginName" placeholder="e.g. Ahmad"></div>
+    <div class="field"><label for="loginPass">Password</label><input type="password" id="loginPass" placeholder="••••••••"></div>
+
+    <div class="field">
+      <label>First time signing in? Choose your role</label>
+      <div class="role-choice">
+        <div class="role-opt selected" data-role="dais">Dais</div>
+        <div class="role-opt" data-role="secretariat">Secretariat</div>
+      </div>
+    </div>
+    <div class="field" id="loginCommitteeField">
+      <label for="loginCommittee">Your committee</label>
+      <select id="loginCommittee"></select>
+    </div>
+    <div class="field" id="secCodeField" style="display:none;">
+      <label for="secCode">Secretariat access code</label>
+      <input type="password" id="secCode" placeholder="Given to you by the SG">
+    </div>
+
+    <button class="login-btn" id="loginBtn">Sign in</button>
+    <div class="login-error" id="loginError"></div>
+    <div class="login-hint">New names create an account on the spot. Returning names must match their original password.</div>
+  </div>
+</div>
+
+<div id="app">
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>VÉRITAS MUN</h1>
+      <div class="who">Grading Dossier · Signed in as <b id="whoName"></b> · <span id="whoRole"></span><span id="whoCommittee"></span><span class="logout-link" id="logoutBtn">sign out</span></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab" data-tab="setup">Setup</div>
+    <div class="tab" data-tab="score">Score</div>
+    <div class="tab" data-tab="rank">Rankings</div>
+    <div class="tab" data-tab="reports">Reports &amp; Bias Review</div>
+  </div>
+
+  <div class="panel" id="setupPanel">
+    <div class="section-label">Committees</div>
+    <div class="add-row"><input type="text" id="newCommittee" placeholder="e.g. UNSC"><button id="addCommitteeBtn">Add committee</button></div>
+    <div id="committeeList"></div>
+
+    <div class="setup-committee-picker">
+      <label for="setupCommitteeSelect">Editing:</label>
+      <select id="setupCommitteeSelect"></select>
+    </div>
+
+    <div class="section-label">Delegates / country allocations</div>
+    <div class="add-row"><input type="text" id="newCountry" placeholder="Delegate / delegation"><button id="addDelegateBtn">Add delegate</button></div>
+    <div id="delegateRoster"></div>
+
+    <div class="section-label">Sessions</div>
+    <div class="section-sub">Grading opens for dais automatically during a session's time window and closes the moment it ends.</div>
+    <div class="add-row">
+      <input type="text" id="newSessionLabel" placeholder="e.g. Session III">
+      <input type="datetime-local" id="newSessionStart">
+      <input type="datetime-local" id="newSessionEnd">
+      <button id="addSessionBtn">Add session</button>
+    </div>
+    <div id="sessionList"></div>
+  </div>
+
+  <div class="panel" id="scorePanel">
+    <div id="scoreStatus"></div>
+    <div id="delegateList"></div>
+  </div>
+
+  <div class="panel" id="rankPanel">
+    <div id="rankCommitteeWrap" class="filter-row">
+      <label for="rankCommitteeSelect">Committee:</label>
+      <select id="rankCommitteeSelect"></select>
+    </div>
+    <div id="rankBanner"></div>
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Delegate</th>
+          <th class="num" id="rankTotalHeader">Total</th>
+          <th class="num">%</th>
+          <th id="rankAwardHeader">Award</th>
+        </tr>
+      </thead>
+      <tbody id="rankBody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel" id="reportsPanel">
+    <div class="filter-row">
+      <label for="reportCommitteeSelect">Filter Committee:</label>
+      <select id="reportCommitteeSelect"></select>
+      <label><input type="checkbox" id="flagOnly"> Outliers only</label>
+    </div>
+    <div class="section-label">Dais Access &amp; Bias Control</div>
+    <div class="section-sub" id="daisAccessSub"></div>
+    <div id="daisAccessList"></div>
+
+    <div class="section-label">Score Entries</div>
+    <table class="report-table">
+      <thead>
+        <tr>
+          <th>Session</th>
+          <th>Delegate</th>
+          <th>Dais</th>
+          <th class="num">Score</th>
+          <th class="num">Peer Avg</th>
+          <th>Status</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="reportBody"></tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">
+    <span class="reset-link" id="resetAll" style="display:none;">Reset system data</span>
+  </div>
+
+</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA_Pn4ILk5C78N0nBlB6l418VGj2JT9vgE",
+  databaseURL: "https://veritas-mun-12d55-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "Veritas-mun-12d55"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const CRITERIA = [
+  {key:'speaking', label:'Public Speaking'},
+  {key:'content', label:'Argumentation & Research'},
+  {key:'diplomacy', label:'Diplomacy & Negotiation'},
+  {key:'procedure', label:'Rules of Procedure'},
+  {key:'resolution', label:'Resolution Contribution'}
+];
+const COMMITTEES_KEY='mun-committees-v2';
+const ACCOUNTS_KEY='mun-accounts-v1';
+const SESSIONS_KEY='mun-sessions-v1';
+const DELEGATES_KEY='mun-delegates-v1';
+const SCORES_KEY='mun-scores-v1';
+const SECRETARIAT_CODE='DIAS-SEC-2026';
+const OUTLIER_THRESHOLD = 7; 
+const GRACE_PERIOD_MS = 10 * 60 * 1000;
+const BIAS_SUSPENSION_THRESHOLD = 3;
+const LEGACY_COMMITTEE_ID = 'legacy-general';
+
+let committees=[], accounts=[], sessions=[], delegates=[], scores=[];
+let currentUser=null;
+let selectedRole='dais';
+let setupCommitteeId=null;
+let editingSessionId=null;
+let editingCommitteeId=null;
+
+function uid(p){ return p + Date.now() + Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+function fmtDT(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return iso;
+  return d.toLocaleString(undefined,{weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+}
+
+async function hashPw(pw){
+  const enc = new TextEncoder().encode(pw);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function loadShared(key, fallback){
+  try {
+    const snapshot = await db.ref(key).once('value');
+    return snapshot.exists() ? snapshot.val() : fallback;
+  } catch(e) { 
+    console.error('Fetch failed for key:', key, e);
+    return fallback; 
+  }
+}
+
+async function saveShared(key, value){
+  try { 
+    await db.ref(key).set(value);
+  } catch(e){ 
+    console.error('Save failed for key:', key, e); 
+  }
+}
+
+// Enable real-time updates for data nodes across devices
+db.ref(COMMITTEES_KEY).on('value', snapshot => {
+  committees = snapshot.exists() ? snapshot.val() : [];
+  populateLoginCommitteeSelect();
+  if (currentUser) {
+    renderCommitteeAdmin();
+    renderSetupSubsections();
+    renderRankCommitteeSelect();
+    renderReportCommitteeSelect();
+  }
+});
+
+db.ref(DELEGATES_KEY).on('value', snapshot => {
+  delegates = snapshot.exists() ? snapshot.val() : [];
+  if (currentUser) {
+    renderDelegateRoster();
+    renderScorePanel();
+    renderRank();
+  }
+});
+
+db.ref(SESSIONS_KEY).on('value', snapshot => {
+  sessions = snapshot.exists() ? snapshot.val() : [];
+  if (currentUser) {
+    renderSessionList();
+    renderScorePanel();
+    renderRank();
+  }
+});
+
+db.ref(ACCOUNTS_KEY).on('value', snapshot => {
+  accounts = snapshot.exists() ? snapshot.val() : [];
+});
+
+db.ref(SCORES_KEY).on('value', snapshot => {
+  scores = snapshot.exists() ? snapshot.val() : [];
+  if (currentUser) { 
+    renderRank(); 
+    renderReports(); 
+    renderScorePanel();
+  }
+});
+
+function total(scoreObj){ 
+  return CRITERIA.reduce((sum,c)=> sum + (parseInt(scoreObj[c.key], 10)||0), 0); 
+}
+
+function calculateBiasMetrics(entry, allScores) {
+  const peers = allScores.filter(o => 
+    o.delegateId === entry.delegateId && 
+    o.sessionId === entry.sessionId && 
+    o.id !== entry.id
+  );
+  
+  if (!peers.length) {
+    return { peerAvg: null, isFlagged: false, deviation: 0 };
+  }
+
+  const peerAvg = peers.reduce((a, o) => a + total(o.scores), 0) / peers.length;
+  const entryTotal = total(entry.scores);
+  const deviation = Math.abs(entryTotal - peerAvg);
+  const isFlagged = deviation >= OUTLIER_THRESHOLD;
+
+  return { peerAvg, isFlagged, deviation };
+}
+
+function isEntryFlagged(entry) {
+  return calculateBiasMetrics(entry, scores).isFlagged;
+}
+
+function flagCountForDais(name) {
+  return scores
+    .filter(e => e.daisName === name)
+    .filter(isEntryFlagged).length;
+}
+
+async function checkAndApplySuspension(name) {
+  const acct = accounts.find(a => a.name === name);
+  if (!acct || acct.role !== 'dais' || acct.suspended) return;
+  const count = flagCountForDais(name);
+  const threshold = (acct.flagsAtLastReinstate || 0) + BIAS_SUSPENSION_THRESHOLD;
+  if (count >= threshold) {
+    acct.suspended = true;
+    await saveShared(ACCOUNTS_KEY, accounts);
+    renderScorePanel();
+  }
+}
+
+/* ---------------- PRE-LOGIN INIT ---------------- */
+async function initPreLogin(){
+  committees = await loadShared(COMMITTEES_KEY, []);
+  delegates = await loadShared(DELEGATES_KEY, []);
+  sessions = await loadShared(SESSIONS_KEY, []);
+  await migrateLegacyIfNeeded();
+  populateLoginCommitteeSelect();
+}
+
+async function migrateLegacyIfNeeded(){
+  const hasLegacyData = delegates.some(d=>!d.committeeId) || sessions.some(s=>!s.committeeId);
+  if(committees.length===0 && hasLegacyData){
+    committees = [{id:LEGACY_COMMITTEE_ID, name:'General (unassigned)'}];
+    delegates = delegates.map(d=> d.committeeId ? d : {...d, committeeId:LEGACY_COMMITTEE_ID});
+    sessions = sessions.map(s=> s.committeeId ? s : {...s, committeeId:LEGACY_COMMITTEE_ID});
+    await saveShared(COMMITTEES_KEY, committees);
+    await saveShared(DELEGATES_KEY, delegates);
+    await saveShared(SESSIONS_KEY, sessions);
+  }
+}
+
+function populateLoginCommitteeSelect(){
+  const sel = document.getElementById('loginCommittee');
+  if(!sel) return;
+  sel.innerHTML = committees.length
+    ? committees.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')
+    : '<option value="">No committees set up yet</option>';
+}
+
+/* ---------------- LOGIN ---------------- */
+document.querySelectorAll('.role-opt').forEach(opt=>{
+  opt.addEventListener('click', ()=>{
+    document.querySelectorAll('.role-opt').forEach(o=>o.classList.remove('selected'));
+    opt.classList.add('selected');
+    selectedRole = opt.dataset.role;
+    document.getElementById('secCodeField').style.display = selectedRole==='secretariat' ? 'block' : 'none';
+    document.getElementById('loginCommitteeField').style.display = selectedRole==='dais' ? 'block' : 'none';
+  });
+});
+
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+async function doLogin(){
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  if(!name || !pass){ errEl.textContent = 'Enter your name and a password.'; return; }
+
+  accounts = await loadShared(ACCOUNTS_KEY, []);
+  const existing = accounts.find(a => a.name.toLowerCase() === name.toLowerCase());
+  const hash = await hashPw(pass);
+
+  if(existing){
+    if(existing.hash !== hash){ errEl.textContent = 'Incorrect password for that name.'; return; }
+    if(existing.role === 'dais' && existing.suspended){ errEl.textContent = 'Your dais access has been suspended due to repeated bias-review flags. Contact your secretariat.'; return; }
+    if(existing.role === 'dais' && !existing.committeeId){
+      const chosen = document.getElementById('loginCommittee').value;
+      if(!chosen){ errEl.textContent = 'Select your committee.'; return; }
+      existing.committeeId = chosen;
+      await saveShared(ACCOUNTS_KEY, accounts);
+    }
+    currentUser = { name: existing.name, role: existing.role, committeeId: existing.committeeId || null };
+  } else {
+    if(selectedRole === 'secretariat'){
+      const code = document.getElementById('secCode').value;
+      if(code !== SECRETARIAT_CODE){ errEl.textContent = 'Incorrect secretariat access code.'; return; }
+    }
+    let committeeId = null;
+    if(selectedRole === 'dais'){
+      committeeId = document.getElementById('loginCommittee').value;
+      if(!committeeId){ errEl.textContent = 'Select your committee (ask secretariat to add one first if none appear).'; return; }
+    }
+    const newAccount = { name, hash, role: selectedRole, committeeId };
+    accounts.push(newAccount);
+    await saveShared(ACCOUNTS_KEY, accounts);
+    currentUser = { name, role: selectedRole, committeeId };
+  }
+
+  await enterApp();
+}
+
+async function enterApp(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('whoName').textContent = currentUser.name;
+  document.getElementById('whoRole').textContent = currentUser.role === 'secretariat' ? 'Secretariat' : 'Dais';
+
+  delegates = await loadShared(DELEGATES_KEY, []);
+  sessions = await loadShared(SESSIONS_KEY, []);
+  scores = await loadShared(SCORES_KEY, []);
+  committees = await loadShared(COMMITTEES_KEY, []);
+
+  if(currentUser.role === 'dais'){
+    const c = committees.find(c=>c.id===currentUser.committeeId);
+    document.getElementById('whoCommittee').textContent = c ? ' · ' + c.name : '';
+  } else {
+    document.getElementById('whoCommittee').textContent = '';
+  }
+
+  const isSec = currentUser.role === 'secretariat';
+  document.querySelector('[data-tab="setup"]').style.display = isSec ? '' : 'none';
+  document.querySelector('[data-tab="score"]').style.display = isSec ? 'none' : '';
+  document.querySelector('[data-tab="reports"]').style.display = isSec ? '' : 'none';
+  document.getElementById('rankCommitteeWrap').style.display = isSec ? 'flex' : 'none';
+  document.getElementById('resetAll').style.display = isSec ? 'inline' : 'none';
+
+  setupCommitteeId = committees[0] ? committees[0].id : null;
+
+  renderCommitteeAdmin();
+  renderSetupSubsections();
+  renderRankCommitteeSelect();
+  renderReportCommitteeSelect();
+  renderScorePanel();
+  renderRank();
+  renderReports();
+
+  activateTab(isSec ? 'setup' : 'score');
+
+  if(window._scoreTimer) clearInterval(window._scoreTimer);
+  window._scoreTimer = setInterval(()=>{ if(currentUser && currentUser.role==='dais') renderScorePanel(); }, 30000);
+}
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  currentUser = null;
+  if(window._scoreTimer) clearInterval(window._scoreTimer);
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'block';
+  document.getElementById('loginName').value='';
+  document.getElementById('loginPass').value='';
+  document.getElementById('loginError').textContent='';
+});
+
+function activateTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  const map = {setup:'setupPanel', score:'scorePanel', rank:'rankPanel', reports:'reportsPanel'};
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(map[name]).classList.add('active');
+  if(name==='rank') renderRank();
+  if(name==='reports') renderReports();
+}
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=> activateTab(tab.dataset.tab));
+});
+
+/* ---------------- COMMITTEES ---------------- */
+document.getElementById('addCommitteeBtn').addEventListener('click', async ()=>{
+  const input = document.getElementById('newCommittee');
+  const name = input.value.trim();
+  if(!name) return;
+  const c = { id: uid('c'), name };
+  committees.push(c);
+  input.value='';
+  await saveShared(COMMITTEES_KEY, committees);
+  if(!setupCommitteeId) setupCommitteeId = c.id;
+  renderCommitteeAdmin(); renderSetupSubsections(); renderRankCommitteeSelect(); renderReportCommitteeSelect();
+});
+
+function renderCommitteeAdmin(){
+  const cl = document.getElementById('committeeList');
+  if(committees.length===0){ cl.innerHTML = '<div class="empty">No committees yet — add one above.</div>'; return; }
+  cl.innerHTML = committees.map(c=>{
+    if(editingCommitteeId === c.id){
+      return `<div class="edit-row">
+        <input type="text" id="editCommitteeName" value="${escapeHtml(c.name)}" style="flex:1;min-width:140px;">
+        <button class="save-btn" data-id="${c.id}" id="saveCommitteeBtn">Save</button>
+        <button class="cancel-btn" id="cancelCommitteeBtn">Cancel</button>
+      </div>`;
+    }
+    return `<div class="list-row">
+      <span>${escapeHtml(c.name)}</span>
+      <span class="actions">
+        <button class="committee-rename" data-id="${c.id}">rename</button>
+        <button class="committee-remove" data-id="${c.id}">remove</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+document.getElementById('committeeList').addEventListener('click', async (e)=>{
+  const id = e.target.dataset.id;
+  if(e.target.classList.contains('committee-rename')){ editingCommitteeId = id; renderCommitteeAdmin(); return; }
+  if(e.target.id === 'cancelCommitteeBtn'){ editingCommitteeId = null; renderCommitteeAdmin(); return; }
+  if(e.target.id === 'saveCommitteeBtn'){
+    const newName = document.getElementById('editCommitteeName').value.trim();
+    if(newName){
+      const c = committees.find(x=>x.id===id);
+      if(c) c.name = newName;
+      await saveShared(COMMITTEES_KEY, committees);
+    }
+    editingCommitteeId = null;
+    renderCommitteeAdmin(); renderSetupSubsections(); renderRankCommitteeSelect(); renderReportCommitteeSelect();
+    return;
+  }
+  if(e.target.classList.contains('committee-remove')){
+    if(!confirm('Remove this committee? Its delegates, sessions, and scores will all be removed too.')) return;
+    committees = committees.filter(c=>c.id!==id);
+    delegates = delegates.filter(d=>d.committeeId!==id);
+    const removedSessionIds = sessions.filter(s=>s.committeeId===id).map(s=>s.id);
+    sessions = sessions.filter(s=>s.committeeId!==id);
+    scores = scores.filter(sc=>!removedSessionIds.includes(sc.sessionId));
+    await saveShared(COMMITTEES_KEY, committees);
+    await saveShared(DELEGATES_KEY, delegates);
+    await saveShared(SESSIONS_KEY, sessions);
+    await saveShared(SCORES_KEY, scores);
+    if(setupCommitteeId===id) setupCommitteeId = committees[0] ? committees[0].id : null;
+    renderCommitteeAdmin(); renderSetupSubsections(); renderRankCommitteeSelect(); renderReportCommitteeSelect();
+  }
+});
+
+document.getElementById('setupCommitteeSelect').addEventListener('change', (e)=>{
+  setupCommitteeId = e.target.value;
+  renderSetupSubsections();
+});
+
+function renderSetupSubsections(){
+  const sel = document.getElementById('setupCommitteeSelect');
+  sel.innerHTML = committees.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if(setupCommitteeId) sel.value = setupCommitteeId;
+
+  renderDelegateRoster();
+  renderSessionList();
+}
+
+/* ---------------- DELEGATES ---------------- */
+document.getElementById('addDelegateBtn').addEventListener('click', async ()=>{
+  if(!setupCommitteeId){ alert('Add a committee first.'); return; }
+  const input = document.getElementById('newCountry');
+  const name = input.value.trim();
+  if(!name) return;
+  delegates.push({ id: uid('d'), committeeId: setupCommitteeId, country: name });
+  input.value='';
+  await saveShared(DELEGATES_KEY, delegates);
+  renderDelegateRoster();
+});
+
+function renderDelegateRoster(){
+  const dr = document.getElementById('delegateRoster');
+  const list = delegates.filter(d=>d.committeeId===setupCommitteeId);
+  dr.innerHTML = list.length
+    ? list.map(d=>`<div class="list-row"><span>${escapeHtml(d.country)}</span><span class="actions"><button class="d-remove" data-id="${d.id}">remove</button></span></div>`).join('')
+    : '<div class="empty">No delegates yet for this committee.</div>';
+}
+document.getElementById('delegateRoster').addEventListener('click', async (e)=>{
+  if(e.target.classList.contains('d-remove')){
+    const id = e.target.dataset.id;
+    delegates = delegates.filter(d=>d.id!==id);
+    scores = scores.filter(s=>s.delegateId!==id);
+    await saveShared(DELEGATES_KEY, delegates);
+    await saveShared(SCORES_KEY, scores);
+    renderDelegateRoster();
+  }
+});
+
+/* ---------------- SESSIONS ---------------- */
+document.getElementById('addSessionBtn').addEventListener('click', async ()=>{
+  if(!setupCommitteeId){ alert('Add a committee first.'); return; }
+  const label = document.getElementById('newSessionLabel').value.trim();
+  const start = document.getElementById('newSessionStart').value;
+  const end = document.getElementById('newSessionEnd').value;
+  if(!label || !start || !end){ alert('Fill in the session name, start time, and end time.'); return; }
+  sessions.push({ id: uid('s'), committeeId: setupCommitteeId, label, start, end });
+  document.getElementById('newSessionLabel').value='';
+  document.getElementById('newSessionStart').value='';
+  document.getElementById('newSessionEnd').value='';
+  await saveShared(SESSIONS_KEY, sessions);
+  renderSessionList();
+});
+
+function renderSessionList(){
+  const sl = document.getElementById('sessionList');
+  const list = sessions.filter(s=>s.committeeId===setupCommitteeId);
+  if(list.length===0){ sl.innerHTML = '<div class="empty">No sessions yet for this committee.</div>'; return; }
+  sl.innerHTML = list.map(s=>{
+    if(editingSessionId === s.id){
+      return `<div class="edit-row">
+        <input type="text" id="editSessionLabel" value="${escapeHtml(s.label)}" style="min-width:140px;">
+        <input type="datetime-local" id="editSessionStart" value="${s.start}">
+        <input type="datetime-local" id="editSessionEnd" value="${s.end}">
+        <button class="save-btn" id="saveSessionBtn" data-id="${s.id}">Save</button>
+        <button class="cancel-btn" id="cancelSessionBtn">Cancel</button>
+      </div>`;
+    }
+    return `<div class="list-row">
+      <span>${escapeHtml(s.label)}<span class="meta">${fmtDT(s.start)} → ${fmtDT(s.end)}</span></span>
+      <span class="actions">
+        <button class="session-edit" data-id="${s.id}">edit</button>
+        <button class="session-remove" data-id="${s.id}">remove</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+document.getElementById('sessionList').addEventListener('click', async (e)=>{
+  const id = e.target.dataset.id;
+  if(e.target.classList.contains('session-edit')){ editingSessionId = id; renderSessionList(); return; }
+  if(e.target.id === 'cancelSessionBtn'){ editingSessionId = null; renderSessionList(); return; }
+  if(e.target.id === 'saveSessionBtn'){
+    const label = document.getElementById('editSessionLabel').value.trim();
+    const start = document.getElementById('editSessionStart').value;
+    const end = document.getElementById('editSessionEnd').value;
+    if(label && start && end){
+      const s = sessions.find(x=>x.id===id);
+      if(s){ s.label=label; s.start=start; s.end=end; }
+      await saveShared(SESSIONS_KEY, sessions);
+    }
+    editingSessionId = null;
+    renderSessionList(); renderScorePanel(); renderRank(); renderReports();
+    return;
+  }
+  if(e.target.classList.contains('session-remove')){
+    if(!confirm('Remove this session? All scores logged under it will be removed too.')) return;
+    sessions = sessions.filter(s=>s.id!==id);
+    scores = scores.filter(sc=>sc.sessionId!==id);
+    await saveShared(SESSIONS_KEY, sessions);
+    await saveShared(SCORES_KEY, scores);
+    renderSessionList(); renderScorePanel(); renderRank(); renderReports();
+  }
+});
+
+/* ---------------- SCORING ---------------- */
+function getActiveSession(committeeId){
+  const now = new Date();
+  return sessions.find(s=> s.committeeId===committeeId && s.start && s.end
+    && new Date(s.start)<=now && now<=new Date(new Date(s.end).getTime()+GRACE_PERIOD_MS));
+}
+function isInGrace(session){
+  return new Date() > new Date(session.end);
+}
+function getNextSession(committeeId){
+  const now = new Date();
+  return sessions.filter(s=>s.committeeId===committeeId && s.start && new Date(s.start)>now)
+    .sort((a,b)=> new Date(a.start)-new Date(b.start))[0] || null;
+}
+function findEntry(delegateId, sessionId, daisName){
+  return scores.find(s=>s.delegateId===delegateId && s.sessionId===sessionId && s.daisName===daisName);
+}
+
+function renderScorePanel(){
+  if(!currentUser || currentUser.role !== 'dais') return;
+  const statusEl = document.getElementById('scoreStatus');
+  const listEl = document.getElementById('delegateList');
+  const committeeId = currentUser.committeeId;
+
+  if(!committeeId){
+    statusEl.innerHTML = '<div class="status-banner closed">No committee assigned to your account — contact secretariat.</div>';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  const acct = accounts.find(a=>a.name===currentUser.name);
+  if(acct && acct.suspended){
+    statusEl.innerHTML = '<div class="status-banner closed">Your scoring access has been suspended due to repeated bias-review flags. Contact your secretariat to review and reinstate access.</div>';
+    listEl.innerHTML = '';
+    return;
+  }
+
+  const active = getActiveSession(committeeId);
+  if(!active){
+    const next = getNextSession(committeeId);
+    statusEl.innerHTML = `<div class="status-banner closed">Grading is currently closed.${next ? ` Next session: <b>${escapeHtml(next.label)}</b>, opens ${fmtDT(next.start)}.` : ' No upcoming sessions scheduled — check with your secretariat.'}</div>`;
+    listEl.innerHTML = '';
+    return;
+  }
+
+  if(isInGrace(active)){
+    const graceEnds = new Date(new Date(active.end).getTime()+GRACE_PERIOD_MS);
+    statusEl.innerHTML = `<div class="status-banner closed">Grace period — <b>${escapeHtml(active.label)}</b> ended at ${fmtDT(active.end)}. Finish and submit scores before ${fmtDT(graceEnds.toISOString())}.</div>`;
+  } else {
+    statusEl.innerHTML = `<div class="status-banner open">Scoring open — <b>${escapeHtml(active.label)}</b> (closes ${fmtDT(active.end)}, plus a short grace window after)</div>`;
+  }
+
+  const list = delegates.filter(d=>d.committeeId===committeeId);
+  if(list.length===0){ listEl.innerHTML = '<div class="empty">No delegates allocated to your committee yet — ask secretariat.</div>'; return; }
+
+  listEl.innerHTML = list.map(d=>{
+    const entry = findEntry(d.id, active.id, currentUser.name);
+    const sc = entry ? entry.scores : {};
+    const t = total(sc);
+    const crit = CRITERIA.map(c=>`
+      <div class="criterion">
+        <label>${c.label}</label>
+        <input type="range" min="0" max="10" step="1" value="${sc[c.key]||0}" data-delegate="${d.id}" data-key="${c.key}" class="scoreInput">
+        <div class="val">${sc[c.key]||0}</div>
+      </div>`).join('');
+    return `<div class="delegate">
+      <div class="d-head"><div class="d-name">${escapeHtml(d.country)}</div><div class="d-total">${t} / 50 (your score)</div></div>
+      <div class="criteria">${crit}</div>
+      <textarea class="notes" data-delegate="${d.id}" placeholder="Session notes (optional)">${escapeHtml(entry ? entry.notes||'' : '')}</textarea>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('delegateList').addEventListener('input', async (e)=>{
+  const t = e.target;
+  const active = getActiveSession(currentUser.committeeId);
+  if(!active) return;
+  if(t.classList.contains('scoreInput')){
+    const delegateId = t.dataset.delegate;
+    let entry = findEntry(delegateId, active.id, currentUser.name);
+    if(!entry){ entry = { id: uid('sc'), delegateId, sessionId: active.id, daisName: currentUser.name, scores:{}, notes:'', ts: Date.now() }; scores.push(entry); }
+    entry.scores[t.dataset.key] = parseInt(t.value,10);
+    entry.ts = Date.now();
+    t.nextElementSibling.textContent = t.value;
+    t.closest('.delegate').querySelector('.d-total').textContent = total(entry.scores) + ' / 50 (your score)';
+    await saveShared(SCORES_KEY, scores);
+    await checkAndApplySuspension(currentUser.name);
+  }
+  if(t.classList.contains('notes')){
+    const delegateId = t.dataset.delegate;
+    let entry = findEntry(delegateId, active.id, currentUser.name);
+    if(!entry){ entry = { id: uid('sc'), delegateId, sessionId: active.id, daisName: currentUser.name, scores:{}, notes:'', ts: Date.now() }; scores.push(entry); }
+    entry.notes = t.value;
+    await saveShared(SCORES_KEY, scores);
+  }
+});
+
+/* ---------------- RANKINGS ---------------- */
+function renderRankCommitteeSelect(){
+  const sel = document.getElementById('rankCommitteeSelect');
+  sel.innerHTML = committees.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  sel.onchange = renderRank;
+}
+function awardTier(pct){
+  if(pct>=90) return {label:'Best Delegate', cls:'best'};
+  if(pct>=80) return {label:'Outstanding Delegate', cls:'outstanding'};
+  if(pct>=65) return {label:'Honorable Mention', cls:'honorable'};
+  if(pct>=50) return {label:'Verbal Commendation', cls:'verbal'};
+  return null;
+}
+function renderRank(){
+  if(!currentUser) return;
+  const body = document.getElementById('rankBody');
+  const committeeId = currentUser.role==='secretariat' ? document.getElementById('rankCommitteeSelect').value : currentUser.committeeId;
+  const committeeSessions = sessions.filter(s=>s.committeeId===committeeId);
+  const committeeDelegates = delegates.filter(d=>d.committeeId===committeeId);
+
+  const banner = document.getElementById('rankBanner');
+  if(!committeeId || committeeDelegates.length===0 || committeeSessions.length===0){
+    banner.innerHTML = '';
+    body.innerHTML = '<tr><td colspan="5" style="padding:40px 16px;text-align:center;color:var(--muted);">Add sessions and delegates for this committee, then score them.</td></tr>';
+    return;
+  }
+  const now = new Date();
+  const conferenceComplete = committeeSessions.every(s=> now > new Date(new Date(s.end).getTime()+GRACE_PERIOD_MS));
+  banner.innerHTML = conferenceComplete
+    ? '<div class="status-banner open">Conference complete — these are each delegate\'s final overall grade, combining every session.</div>'
+    : '<div class="status-banner closed">Provisional standing — grading is still in progress. The final overall grade locks in once every session has closed.</div>';
+  document.getElementById('rankTotalHeader').textContent = conferenceComplete ? 'Final Grade' : 'Total';
+  document.getElementById('rankAwardHeader').textContent = conferenceComplete ? 'Final Award' : 'Award tier (provisional)';
+
+  const rows = committeeDelegates.map(d=>{
+    let sum = 0;
+    committeeSessions.forEach(s=>{
+      const entries = scores.filter(sc=>sc.delegateId===d.id && sc.sessionId===s.id);
+      if(entries.length) sum += entries.reduce((a,e)=>a+total(e.scores),0)/entries.length;
+    });
+    const max = committeeSessions.length*50;
+    const pct = max ? Math.round((sum/max)*100) : 0;
+    return { d, sum: Math.round(sum*10)/10, pct };
+  }).sort((a,b)=> b.sum - a.sum);
+
+  body.innerHTML = rows.map((r,i)=>{
+    const tier = awardTier(r.pct);
+    return `<tr><td class="rank-pos">${i+1}</td><td class="rank-name">${escapeHtml(r.d.country)}</td><td class="num">${r.sum}</td><td class="num">${r.pct}%</td><td>${tier ? `<span class="award ${tier.cls}">${tier.label}</span>` : '<span style="color:var(--muted);font-size:13px;">—</span>'}</td></tr>`;
+  }).join('');
+}
+
+/* ---------------- REPORTS & BIAS REVIEW ---------------- */
+function renderReportCommitteeSelect(){
+  const sel = document.getElementById('reportCommitteeSelect');
+  sel.innerHTML = '<option value="all">All committees</option>' + committees.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  sel.onchange = renderReports;
+}
+document.getElementById('flagOnly').addEventListener('change', renderReports);
+
+function renderDaisAccess(){
+  document.getElementById('daisAccessSub').textContent =
+    `A dais is auto-suspended after ${BIAS_SUSPENSION_THRESHOLD} flagged (outlier) entries. Reinstating resets the count going forward.`;
+  const list = document.getElementById('daisAccessList');
+  const daisAccounts = accounts.filter(a=>a.role==='dais');
+  if(daisAccounts.length===0){ list.innerHTML = '<div class="empty">No dais have signed in yet.</div>'; return; }
+  list.innerHTML = daisAccounts.map(a=>{
+    const committee = committees.find(c=>c.id===a.committeeId);
+    const count = flagCountForDais(a.name);
+    const statusText = a.suspended ? 'Suspended' : 'Active';
+    return `<div class="list-row">
+      <span>${escapeHtml(a.name)}<span class="meta">${committee ? escapeHtml(committee.name) : 'No committee'} · ${count} flagged ${count===1?'entry':'entries'} · ${statusText}</span></span>
+      <span class="actions">
+        <button class="dais-toggle" data-name="${escapeHtml(a.name)}">${a.suspended ? 'Reinstate access' : 'Suspend access'}</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+document.getElementById('daisAccessList').addEventListener('click', async (e)=>{
+  if(!e.target.classList.contains('dais-toggle')) return;
+  const name = e.target.dataset.name;
+  const acct = accounts.find(a=>a.name===name);
+  if(!acct) return;
+  if(acct.suspended){
+    acct.suspended = false;
+    acct.flagsAtLastReinstate = flagCountForDais(name);
+  } else {
+    if(!confirm(`Suspend ${name}'s scoring access?`)) return;
+    acct.suspended = true;
+  }
+  await saveShared(ACCOUNTS_KEY, accounts);
+  renderDaisAccess();
+});
+
+function renderReports(){
+  if(!currentUser || currentUser.role !== 'secretariat') return;
+  renderDaisAccess();
+  const body = document.getElementById('reportBody');
+  const flagOnly = document.getElementById('flagOnly').checked;
+  const committeeFilter = document.getElementById('reportCommitteeSelect').value;
+  const rows = [];
+
+  sessions.filter(s=> committeeFilter==='all' || s.committeeId===committeeFilter).forEach(s=>{
+    delegates.filter(d=>d.committeeId===s.committeeId).forEach(d=>{
+      const entries = scores.filter(sc=>sc.delegateId===d.id && sc.sessionId===s.id);
+      entries.forEach(e=>{
+        const metrics = calculateBiasMetrics(e, scores);
+        rows.push({ 
+          session: s.label, 
+          delegate: d.country, 
+          dais: e.daisName, 
+          total: total(e.scores), 
+          peerAvg: metrics.peerAvg, 
+          flagged: metrics.isFlagged, 
+          notes: e.notes, 
+          ts: e.ts 
+        });
+      });
+    });
+  });
+
+  const filtered = flagOnly ? rows.filter(r=>r.flagged) : rows;
+  filtered.sort((a,b)=> b.ts - a.ts);
+
+  body.innerHTML = filtered.length ? filtered.map(r=>`
+    <tr><td>${escapeHtml(r.session)}</td><td>${escapeHtml(r.delegate)}</td><td>${escapeHtml(r.dais)}</td>
+    <td class="num">${r.total}</td><td class="num">${r.peerAvg!==null ? Math.round(r.peerAvg*10)/10 : '—'}</td>
+    <td>${r.flagged ? '<span class="flag-badge">outlier</span>' : ''}</td>
+    <td style="max-width:220px;">${escapeHtml(r.notes)}</td></tr>`).join('')
+    : '<tr><td colspan="7" style="padding:40px 16px;text-align:center;color:var(--muted);">No entries yet.</td></tr>';
+}
+
+/* ---------------- RESET ---------------- */
+document.getElementById('resetAll').addEventListener('click', async ()=>{
+  if(!currentUser || currentUser.role !== 'secretariat'){ return; }
+  if(!confirm('Clear ALL committees, sessions, delegates, and scores? This cannot be undone.')) return;
+  committees=[]; sessions=[]; delegates=[]; scores=[];
+  await saveShared(COMMITTEES_KEY, committees);
+  await saveShared(SESSIONS_KEY, sessions);
+  await saveShared(DELEGATES_KEY, delegates);
+  await saveShared(SCORES_KEY, scores);
+  setupCommitteeId=null;
+  renderCommitteeAdmin(); renderSetupSubsections(); renderRankCommitteeSelect(); renderReportCommitteeSelect();
+  renderScorePanel(); renderRank(); renderReports();
+});
+
+initPreLogin();
+</script>
+</body>
+</html>
